@@ -7,8 +7,10 @@ When all children of such a supervisor suddenly die, the supervisor itself is re
 
 ## Use
 
+```
 iex -S mix
 
 :observer.start # have a look to DynSup pid
 ChildMgr.setup # ok 4 children
 ChildMgr.crash_all # ko no more children and DynSup pid change
+```
