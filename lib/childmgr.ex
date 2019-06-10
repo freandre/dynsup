@@ -1,9 +1,11 @@
 defmodule ChildMgr do
-  use Agent
+  use GenServer
+
+  # Client
 
   def start_link(_arg) do
     IO.puts("Start child manager")
-    Agent.start_link(fn -> [] end, name: __MODULE__)
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   def setup do
@@ -14,15 +16,55 @@ defmodule ChildMgr do
   end
 
   def add_child(name) do
-    name = String.to_atom(name)
-    DynSup.start_child(name)
-    Agent.update(__MODULE__, &[name | &1])
+    GenServer.cast(__MODULE__, {:child, name})
   end
 
   def crash_all do
-    Agent.get(__MODULE__, & &1)
+    GenServer.cast(__MODULE__, :crash)
+  end
+
+  # Server (callbacks)
+
+  @impl true
+  def init(:ok) do
+    Process.monitor(DynSup)
+    {:ok, []}
+  end
+
+  def handle_cast({:child, name}, state) do
+    name = String.to_atom(name)
+    DynSup.start_child(name)
+
+    {:noreply, [name | state]}
+  end
+
+  @impl true
+  def handle_cast(:crash, state) do
+    state
     |> Enum.each(fn name ->
       Child.crash_kill(name)
     end)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _ref, :process, {DynSup, _node} = object, _reason}, state) do
+    Process.sleep(500)
+
+    Process.monitor(object)
+
+    state
+    |> Enum.each(fn name ->
+      DynSup.start_child(name)
+    end)
+
+    {:noreply, state}
+  end
+
+  def handle_info(val, state) do
+    IO.inspect(val)
+
+    {:noreply, state}
   end
 end
