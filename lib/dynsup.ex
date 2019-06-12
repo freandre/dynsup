@@ -13,7 +13,7 @@ defmodule DynSup do
   def start_child(name) do
     DynamicSupervisor.start_child(
       __MODULE__,
-      {Child, [name]}
+      {ChildSupervisor, [name]}
     )
   end
 end

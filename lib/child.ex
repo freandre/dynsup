@@ -6,7 +6,7 @@ defmodule Child do
       id: name,
       start: {Child, :start_link, [name]},
       type: :worker,
-      restart: :permanent
+      restart: :transient
     }
   end
 

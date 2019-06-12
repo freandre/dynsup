@@ -14,7 +14,6 @@ defmodule ChildMgr do
   end
 
   def add_child(name) do
-    name = String.to_atom(name)
     DynSup.start_child(name)
     Agent.update(__MODULE__, &[name | &1])
   end
@@ -22,7 +21,7 @@ defmodule ChildMgr do
   def crash_all do
     Agent.get(__MODULE__, & &1)
     |> Enum.each(fn name ->
-      Child.crash_kill(name)
+      Child.crash_kill(String.to_atom(name))
     end)
   end
 end
